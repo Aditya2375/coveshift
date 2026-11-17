@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#ece9e0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'none'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'"
+    />
+    <title>Coveshift · Where the risk comes from</title>
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#lab">Skip to the lab</a>
+    <header>
+      <a class="brand" href="#"
+        >cove<span>shift</span><i aria-hidden="true">▧</i></a
+      >
+      <nav aria-label="Main">
+        <a href="#lab">Lab</a><a href="#matrices">Matrices</a
+        ><a href="#method">Method</a
+        ><a href="https://github.com/Aditya2375/coveshift">Source ↗</a>
+      </nav>
+    </header>
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">RISK STUDY / 006</p>
+          <h1>Same holdings.<br />Different <em>risk.</em></h1>
+          <p class="intro">
+            A fitted factor model is a view of covariance, not a crystal ball.
+            Take it apart. Find what the assumptions leave out.
+          </p>
+          <div class="tags">
+            <span>5 fictional assets</span><span>2 synthetic factors</span
+            ><span>0 market data</span>
+          </div>
+        </div>
+        <div class="hero-figure" aria-label="Covariance model diagram">
+          <p class="eyebrow">THE MODEL, OPENED UP</p>
+          <div class="equation">Σ = B F B<sup>T</sup> + Ψ</div>
+          <div class="matrix-demo" aria-hidden="true">
+            <span>01</span><b>COMMON<br />MOVEMENT</b><i>+</i><span>02</span
+            ><b>RESIDUAL<br />MOVEMENT</b>
+          </div>
+          <p>Train on days 1-120.<br />Freeze. Inspect days 121-180.</p>
+          <small>Invented daily simple returns. No live prices.</small>
+        </div>
+      </section>
+      <section id="lab" class="lab">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">01 / THE EXPERIMENT</p>
+            <h2>Make the assumption visible.</h2>
+          </div>
+          <span id="status" role="status" aria-live="polite">LOADING</span>
+        </div>
+        <form id="controls" novalidate>
+          <div class="control-top">
+            <label
+              >Data world<select id="scenario">
+                <option value="0">Stable control</option>
+                <option value="1">Correlated residuals</option>
+                <option value="2">Later volatility jump</option>
+              </select></label
+            ><label
+              >Residual covariance<select id="residual">
+                <option value="diagonal">Diagonal only</option>
+                <option value="full">Full matrix</option>
+              </select></label
+            ><label
+              >Factor correlation shrink (%)<input
+                id="shrink"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value="0"
+            /></label>
+          </div>
+          <div class="weight-head">
+            <p>Signed holdings (% of reference capital)</p>
+            <span>No normalization. Net need not be 100%.</span>
+          </div>
+          <div id="weights" class="weights">
+            <label
+              >Aster<input
+                id="w0"
+                type="number"
+                min="-100"
+                max="100"
+                step="1"
+                value="25" /></label
+            ><label
+              >Birch<input
+                id="w1"
+                type="number"
+                min="-100"
+                max="100"
+                step="1"
+                value="25" /></label
+            ><label
+              >Cove<input
+                id="w2"
+                type="number"
+                min="-100"
+                max="100"
+                step="1"
+                value="20" /></label
+            ><label
+              >Dune<input
+                id="w3"
+                type="number"
+                min="-100"
+                max="100"
+                step="1"
+                value="15" /></label
+            ><label
+              >Elm<input
+                id="w4"
+                type="number"
+                min="-100"
+                max="100"
+                step="1"
+                value="15"
+            /></label>
+          </div>
+          <div class="actions">
+            <button type="submit" id="apply">
+              Apply experiment <span aria-hidden="true">↗</span></button
+            ><button type="button" id="reset" class="secondary">Reset</button>
+            <p id="error" role="alert"></p>
+          </div>
+        </form>
+        <div class="scenario-note">
+          <h3 id="scenario-name"></h3>
+          <p id="scenario-desc"></p>
+          <p id="book"></p>
+        </div>
+        <div class="metrics">
+          <article class="selected">
+            <p>MODEL ANNUALIZED VOL</p>
+            <strong id="model-vol">-</strong><small id="model-mode"></small>
+          </article>
+          <article>
+            <p>EARLIER SAMPLE VOL</p>
+            <strong id="train-vol">-</strong
+            ><small>120 synthetic observations · fitted period</small>
+          </article>
+          <article>
+            <p>LATER REALIZED VOL</p>
+            <strong id="holdout-vol">-</strong
+            ><small>60 synthetic observations · not used to fit</small>
+          </article>
+        </div>
+        <p class="caveat">
+          Volatility is standard deviation, not loss or return. Annualization
+          uses √252 and assumes uncorrelated daily returns. Later realized risk
+          is a single synthetic comparison, not validation of forecast accuracy.
+        </p>
+        <div class="panels">
+          <article class="panel">
+            <div class="panel-head">
+              <span>01A</span>
+              <h3>Who contributes?</h3>
+            </div>
+            <p>
+              Signed asset Euler contributions to annualized model volatility. A
+              negative contribution offsets risk in this book; it does not make
+              an asset safe.
+            </p>
+            <div
+              id="asset-bars"
+              class="bars"
+              role="img"
+              aria-label="Signed asset volatility contributions"
+            ></div>
+            <p class="caption" id="asset-sum"></p>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <span>01B</span>
+              <h3>Two ways to slice it.</h3>
+            </div>
+            <p>
+              Factor and asset-residual Euler contributions use the same
+              total-volatility denominator. These contributions add. Standalone
+              volatilities do not.
+            </p>
+            <div
+              id="factor-bars"
+              class="bars"
+              role="img"
+              aria-label="Factor and residual volatility contributions"
+            ></div>
+            <p class="caption" id="factor-sum"></p>
+          </article>
+        </div>
+        <div class="audit-strip">
+          <p>
+            <span>FACTOR VARIANCE SHARE</span
+            ><strong id="factor-share"></strong>
+          </p>
+          <p>
+            <span>RESIDUAL VARIANCE SHARE</span
+            ><strong id="residual-share"></strong>
+          </p>
+          <p>
+            <span>MODEL MINUS SAMPLE VARIANCE</span
+            ><strong id="variance-gap"></strong
+            ><small>Daily return², not a performance score</small>
+          </p>
+        </div>
+      </section>
+      <section id="matrices">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">02 / THE ACCOUNTING</p>
+            <h2>Nothing behind the heatmap.</h2>
+          </div>
+        </div>
+        <p class="section-intro">
+          All covariance entries below are daily decimal return² × 10⁶. Signed
+          off-diagonal entries are not standalone risk. Tables scroll locally on
+          small screens.
+        </p>
+        <div class="matrix-grid">
+          <article class="panel">
+            <h3>Selected model Σ</h3>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Selected model covariance"
+            >
+              <table id="covariance"></table>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Earlier sample covariance</h3>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Earlier sample covariance"
+            >
+              <table id="sample"></table>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Selected residual Ψ</h3>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Residual covariance"
+            >
+              <table id="residual-matrix"></table>
+            </div>
+          </article>
+          <article class="panel">
+            <h3>Selected factor F</h3>
+            <div
+              class="table-wrap"
+              tabindex="0"
+              role="region"
+              aria-label="Factor covariance"
+            >
+              <table id="factors"></table>
+            </div>
+            <h4>Book factor exposure B<sup>T</sup>w</h4>
+            <p id="exposure"></p>
+            <p class="caption">
+              Factor shrink changes only F's off-diagonals. It does not refit B
+              or Ψ.
+            </p>
+          </article>
+        </div>
+        <article class="panel fitted">
+          <h3>Earlier fitted loadings B and intercepts</h3>
+          <p>
+            One intercept and two coefficients per asset, estimated only on the
+            first 120 observations.
+          </p>
+          <div
+            class="table-wrap"
+            tabindex="0"
+            role="region"
+            aria-label="Fitted loadings"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Asset</th>
+                  <th scope="col">Intercept / day</th>
+                  <th scope="col">Broad β</th>
+                  <th scope="col">Tilt β</th>
+                  <th scope="col">Asset Euler / year</th>
+                  <th scope="col">Residual Euler / year</th>
+                </tr>
+              </thead>
+              <tbody id="loadings"></tbody>
+            </table>
+          </div>
+          <p id="identity" class="caption"></p>
+        </article>
+      </section>
+      <section id="observations">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">03 / THE EVIDENCE</p>
+            <h2>Earlier fit. Later reality.</h2>
+          </div>
+        </div>
+        <p class="section-intro">
+          The chart is daily book return, not cumulative wealth. The shaded
+          right side is held out. Changing holdings recomputes book returns but
+          never refits the earlier model.
+        </p>
+        <div class="chart-wrap">
+          <svg
+            id="returns-chart"
+            role="img"
+            aria-label="Daily synthetic book returns, days 1 to 180"
+          ></svg>
+        </div>
+        <details>
+          <summary>Inspect all 180 generated observations</summary>
+          <p>
+            Decimal daily simple returns. Factors and every asset are invented;
+            the same deterministic seed is used in each world.
+          </p>
+          <div
+            class="table-wrap observations"
+            tabindex="0"
+            role="region"
+            aria-label="All synthetic observations"
+          >
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Day</th>
+                  <th scope="col">Split</th>
+                  <th scope="col">Broad</th>
+                  <th scope="col">Tilt</th>
+                  <th scope="col">Aster</th>
+                  <th scope="col">Birch</th>
+                  <th scope="col">Cove</th>
+                  <th scope="col">Dune</th>
+                  <th scope="col">Elm</th>
+                  <th scope="col">Book</th>
+                </tr>
+              </thead>
+              <tbody id="data"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+      <section id="method">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">04 / WHAT THIS DOES NOT SAY</p>
+            <h2>A model with its limits attached.</h2>
+          </div>
+        </div>
+        <div class="method-grid">
+          <article>
+            <h3>Fit, then freeze.</h3>
+            <p>
+              For each asset, centered ordinary least squares fits r = α + Bf +
+              ε on days 1-120. Two correlated fictional factors, Broad and Tilt,
+              are not economic market factors. The intercept is fitted but does
+              not enter covariance. No expected return is estimated for
+              allocation.
+            </p>
+          </article>
+          <article>
+            <h3>The diagonal is a choice.</h3>
+            <p>
+              F and residual Ψ use centered sample covariance with denominator
+              119. This is accounting, not the unbiased regression error
+              estimator RSS/(n−3). Full Ψ and unshrunk F reconstruct the earlier
+              sample covariance because fitted residuals are orthogonal to
+              fitted factors. Diagonal Ψ discards residual co-movement.
+            </p>
+          </article>
+          <article>
+            <h3>Contributions are signed.</h3>
+            <p>
+              σ² = w<sup>T</sup>Σw. Asset contribution is wᵢ(Σw)ᵢ/σ. Factor
+              contribution is xₖ(Fx)ₖ/σ, where x = B<sup>T</sup>w. Residual
+              contribution is wᵢ(Ψw)ᵢ/σ. In full residual mode even a residual
+              contribution can be negative. At zero risk, all Euler
+              contributions and shares are undefined.
+            </p>
+          </article>
+          <article>
+            <h3>No best portfolio.</h3>
+            <p>
+              Holdings are a linear book against reference capital. Net and
+              gross are reported, never normalized. Shorts, leverage, cash
+              yield, financing, costs, tail losses, execution and constraints
+              are not modeled. No optimization, advice, real prices, uploads,
+              accounts, broker connection, storage or trading.
+            </p>
+          </article>
+        </div>
+        <div class="reading">
+          <h3>Further reading</h3>
+          <a href="https://docs.mosek.com/portfolio-cookbook/factormodels.html"
+            >MOSEK: factor covariance assumptions ↗</a
+          ><a href="https://web.stanford.edu/~wfsharpe/mia/fac/mia_fac3.htm"
+            >Sharpe: factor-based risks and correlations ↗</a
+          ><a
+            href="https://quantinveststrats.readthedocs.io/en/stable/factor_risk_models.html"
+            >qis: Euler and residual risk allocation ↗</a
+          ><a
+            href="https://numpy.org/doc/stable/reference/generated/numpy.cov.html"
+            >NumPy: covariance conventions ↗</a
+          >
+        </div>
+      </section>
+    </main>
+    <footer>
+      <a class="brand" href="#">coveshift</a>
+      <p>
+        A synthetic covariance study by Aditya Kulkarni.<br />MIT licensed ·
+        Python + JavaScript · No financial advice.
+      </p>
+      <a href="https://github.com/Aditya2375/coveshift">Read the code ↗</a>
+    </footer>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
